@@ -1,26 +1,38 @@
+ccomp = gcc
+catcomp = catcomp
+linkflags = -noixemul -lreqtools
+flags = -Wall -g -DDEBUG
+bin = MultiDisplay
 obj = mdprincipal.o mdfonctions.o mddatatypes.o mdreqtools.o mdappicon.o
-source = mdprincipal.c mdfonctions.c mddatatypes.c mdreqtools.c mdappicon.c
-linkflags = -noixemul
-flags =
-# -DDEBUG
+cat = MultiDisplay.catalog
 
-MD : $(obj)
-	gcc $(linkflags) -o MD $(obj) -lreqtools
+menu:
+	@echo "Usage is:"
+	@echo "make binary, to build the main executable"
+	@echo "make locale, to build the language strings file and the localized catalogs"
+	@echo "make clear, to delete all object files"
+
+binary : $(obj)
+	$(ccomp) $(flags) -o $(bin) $(obj) $(linkflags)
+
+locale :
+	$(catcomp) Catalogs/Translations/md.cd NOCODE CFILE=mdstrings.h
+	$(catcomp) Catalogs/Translations/md.cd Catalogs/Translations/english.ct CATALOG=Catalogs/English/$(cat)
 
 mdprincipal.o : mdprincipal.c
-	gcc -c mdprincipal.c $(flags)
+	$(ccomp) -c mdprincipal.c $(flags)
 
 mdfonctions.o : mdfonctions.c
-	gcc -c mdfonctions.c $(flags)
+	$(ccomp) -c mdfonctions.c $(flags)
 
 mddatatypes.o : mddatatypes.c
-	gcc -c mddatatypes.c $(flags)
+	$(ccomp) -c mddatatypes.c $(flags)
 
 mdreqtools.o : mdreqtools.c
-	gcc -c mdreqtools.c $(flags)
+	$(ccomp) -c mdreqtools.c $(flags)
 
 mdappicon.o : mdappicon.c
-	gcc -c mdappicon.c $(flags)
+	$(ccomp) -c mdappicon.c $(flags)
 
 clear :
-	rm *.o
+	@delete $(obj)

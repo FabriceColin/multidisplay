@@ -16,77 +16,64 @@
  * Modified by Fabrice Colin
  *
  */
-
-#include <stdio.h>
-#include <string.h>
-
-#include <exec/types.h>
-#include <exec/memory.h>
-#include <exec/libraries.h>
-#include <dos/dos.h>
-#include <dos/rdargs.h>
-#include <dos/dosextens.h>
-#include <datatypes/datatypes.h>
-#include <datatypes/datatypesclass.h>
-
-#include <libraries/iffparse.h>
-
-#include <pragmas/exec_pragmas.h>
-#include <pragmas/dos_pragmas.h>
-#include <pragmas/datatypes_pragmas.h>
-#include <pragmas/iffparse_pragmas.h>
-
-#include "md_strings.h"
-
-/* Prototypes des fonctions */
-extern STRPTR GetString(struct LocaleInfo *li, LONG stringNum);
+#include "defs.h"
+#include "mdstrings.h"
+ /* Fonctions externes */
+#include "mdfonctions.h"        /* GetString */
 
 extern struct Library *SysBase,*DOSBase,*DataTypesBase,*IFFParseBase;
 extern struct LocaleInfo md_locale;                     /* Pour GetString() */
 
-/* Verify sytem version */
-BOOL VerificationSys(void)
-{
-    if (SysBase->lib_Version < 39)
-    {
-        return FALSE;
-    }
-    return TRUE;
-}
-
 /* Say what the datatype of the file is */
-STRPTR ExamenDT(STRPTR name)
+BOOL ExamenDT(STRPTR name,STRPTR *group,STRPTR *basename)
 {
-    struct DataTypeHeader *dth;
-    struct DataType *dtn;
-    STRPTR buffer=NULL;
-    BPTR lock;
+   struct DataTypeHeader *dth;
+   struct DataType *dtn;
+   BOOL bReturn=TRUE;
+   BPTR lock;
 
-    /* Lock the current name */
-    if (lock = Lock (name, ACCESS_READ))
-    {
-        /* Determine the DataType of the file */
-        if (dtn = ObtainDataTypeA (DTST_FILE, (APTR) lock, NULL))
-        {
-            buffer = (STRPTR)AllocVec(50,MEMF_PUBLIC|MEMF_CLEAR);
-            if ( buffer )
-            {
-                dth = dtn->dtn_Header;
+  if( (name == NULL) || (*group == NULL) || (*basename == NULL) )
+      return FALSE;
+
+   /* Lock the current name */
+   lock = Lock(name,ACCESS_READ);
+   if( lock )
+   {
+      /* Determine the DataType of the file */
+      dtn = ObtainDataTypeA(DTST_FILE,(APTR)lock,NULL);
+      if( dtn )
+      {
+         dth = dtn->dtn_Header;
+
+         *group = (STRPTR)MemoryAlloc(strlen(GetDTString(dth->dth_GroupID))+1,TRUE);
+         *basename = (STRPTR)MemoryAlloc(strlen(dth->dth_BaseName)+1,TRUE);
+         strcpy(*group,GetDTString(dth->dth_GroupID));
+         strcpy(*basename,dth->dth_BaseName);
+
 #ifdef DEBUG
-                printf ("Nom du datatype : %s\n", dth->dth_BaseName);
+         printf("Group : %s",*group);
+         printf("Base name : %s\n",*basename);
 #endif
-                strcpy (buffer,dth->dth_BaseName);
-            }
-            /* Release the DataType */
-            ReleaseDataType (dtn);
-        }
+         /* Release the DataType */
+         ReleaseDataType (dtn);
+      }
+      else
+      {
 #ifdef DEBUG
-        else printf ("Impossible de déterminer le type de %s\n.", name);
+         printf("Cannot obtain datatype information about %s\n",name);
 #endif
-        UnLock (lock);
-    }
+         *group = *basename = NULL;
+         bReturn = FALSE;
+      }
+      UnLock(lock);
+   }
+   else
+   {
 #ifdef DEBUG
-    else printf ("Impossible d'examiner %s.\n", name);
+      printf("Cannot examine %s\n",name);
 #endif
-    return buffer;
+      bReturn = FALSE;
+   }
+
+   return bReturn;
 }

@@ -1,8 +1,8 @@
-;;$VER: md.cd 39.0 (5.9.97)
+;;$VER: md.cd 39.10 (01.01.99)
 ;;
 ;;  $Filename: md.cd $
-;;  $Version: 39.0 $
-;;  $Date: 5.9.97 $
+;;  $Version: 39.10 $
+;;  $Date: 01.01.99 $
 ;;  $Creation: 5.9.97 $
 ;;
 MSG_KSVERSION (1//)
@@ -18,7 +18,7 @@ MSG_UNKNOWNID (//)
 Impossible de déterminer le type de\n%s
 ;
 MSG_SHOWID (//)
-Nom : %s\nType : %s
+Fichier : %s\nGroupe : %s\nNom : %s
 ;
 MSG_NOICON (//)
 Impossible de créer une AppIcon.\nL'icône de MD ou l'icône par défaut\nn'existe pas !
@@ -27,7 +27,16 @@ MSG_REQFILE_TITLE (//)
 Choisir un fichier à ouvrir
 ;
 MSG_REQINFO_TITLE (//)
-MultiDisplay 1.8
+MultiDisplay 1.10
+;
+MSG_REQINFO_ACK (//)
+OK
+;
+MSG_REQINFO_REQ (//)
+OK|Arrêt
+;
+MSG_REQINFO_BROWSE (//)
+OK|Suivant|Arrêt
 ;
 MSG_ICON_TITLE (//)
 MultiDisplay
