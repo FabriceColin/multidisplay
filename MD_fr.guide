@@ -1,0 +1,318 @@
+@Database MutiDisplay.guide
+@Author "Fabrice Colin"
+@(c) 1998 Fabrice Colin
+@$VER:MultiDisplay.guide 1.10 (02.01.99)
+@Wordwrap
+@Font Helvetica.font 13
+@Index "Main"
+
+@Node Main "MultiDisplay"
+MultiDisplay 1.10 , Copyright © 1995-1999 Fabrice Colin.
+
+        @{" Copyright et garantie " LINK Copyright}     Lisez moi ça !
+        @{" Introduction " LINK Introduction}                  Qu'est ce que c'est que ça ?
+        @{" Utilisation " LINK Usage}                     Mode d'emploi
+        @{" Configuration " LINK Configuration}                Comment configurer MD de façon efficace
+        @{" Historique " LINK History}                    Les précédentes versions ...
+        @{" Problémes et bugs " LINK Bugs}        Est-ce possible ?
+        @{" Auteur "  LINK Author}                         Qui est l'espéce de #!%@ ?
+@EndNode
+
+@Node Copyright "MultDisplay : Copyright et garantie"
+
+L'auteur ne peut en aucun cas être tenu pour responsable de tous les dommages
+ que peut causer l'utilisation de MultiDisplay , aussi bien matériel que
+ psychologique , sur votre ordinateur ou sur vous-même.
+Vous l'utilisez à vos risques et périls.
+MultiDisplay fait partie du domaine public donc il peut être distribué
+ librement ET gratuitement à condition qu'il soit accompagné de la présente
+ documentation.
+
+Il a été créé pour répondre aux besoins particuliers de l'auteur et il se peut donc
+ que personne n'y trouve son compte. Néanmoins attention, si vous commencez à l'
+ utiliser vous aurez du mal à vous en passer.
+La version présente a été conçu pour le système version 3.0 ou plus.
+
+Les librairies suivantes sont utilisées :
+ datatypes.library,version 39
+ iffparse.library,version 39
+ icon.library,version 39
+ workbench.library,version 39
+ locale.library,version 39
+ reqtools.library,version 38 , Copyright © 1991-1994 Nico François 1995-1997 Magnus Holmgren
+Les cinq premières font déjà partie de votre système, quant à la reqtools, elle est
+ disponible gratuitement dans toutes les bonnes crémeries.
+
+MD a été créé et intensivement utilisé sur la configuration suivante :
+ Commodore A1200 Tower
+ Kickstart 40.68 Workbench 39.29
+ Blizzard 1260/50 FAST:16Mo SCSI
+ Disque Dur IDE Seagate 1,6Go
+ Lecteur CDRom ATAPI 8x Momitsu
+ Lecteur Zip Iomega SCSI interne
+@EndNode
+
+@Node Introduction "MultiDisplay : Mais pourquoi ? But why ? Aber warum ?"
+
+MultiDisplay peut reconnaître le type de différents fichiers de données ( textes,
+ images, sons, archives... ) grâce à l'utilisation des datatypes et utiliser le
+ programme approprié pour les visualiser ou effectuer d'autres opérations.
+La reconnaissance peut également être affinée selon les extensions des noms de fichiers.
+Les datatypes étant loin d'être rapides avec certains formats, les utilitaires
+ spécialisés sont bien souvent préférables. D'où l'intérêt de MultiDisplay.
+
+Il n'apporte aucune révolution notable puisqu'on peut trouver dans le DP plusieurs
+ programmes du même type.
+Le plus intéressant est de l'utiliser avec ToolManager Copyright © 1990-1997 Stefan Becker.
+Il peut également être utilisé en AppIcon. Alors à vous les joies du "drag and drop"...
+
+Les sources C sont également incluses.
+@EndNode
+
+@Node Usage "MultiDisplay : Mode d'emploi"
+
+MultiDisplay reconnaît les arguments suivants :
+@{B}All/S@{UB} : Indique qu'en cas d'utilisation de jokers, les fichiers des répertoires
+ correspondant seront aussi examinés ainsi que ceux des sous répertoires.
+ Faux par défaut. Activable par tooltype.
+@{B}Sync/S@{UB} : Force le lancement des différentes commandes de façon synchrone.
+ Inactif par défaut. Activable par tooltype.
+@{B}ShowDT/S@{UB} : Active pour chaque argument l'apparition d'une fenêtre indiquant le type
+ du fichier. Dans ce cas, Sync est également activé.
+ Inactif par défaut. Activable par tooltype.
+@{B}Files/M@{UB} : Liste des fichiers à examiner.
+
+Il existe une autre option uniquement activable par tooltype:
+@{B}AppIcon@{UB} : MD apparait sous la forme d'une AppIcon sur votre Workbench. L'icône
+ utilisée est celle de MD. Double-cliquer sur l'AppIcon met fin à ce mode.
+ Si des arguments sont passés à MD, cette option est ignorée.
+ Inactif par défaut.
+
+Les tooltypes seront utilisés uniquement si MD est lancé en mode Workbench.
+
+Voir @{" Configuration " LINK Configuration} pour de plus amples informations ...
+
+@EndNode
+
+@Node Configuration "MultiDisplay : Comment le configurer ?"
+
+MultiDisplay fonctionne avec un fichier de configuration qui doit se nommer MD.config
+ et être placé soit dans le même répertoire que MultiDisplay soit dans S:.
+Pour chaque type de données, il faut définir quel programme utiliser. Typiquement, il suffit
+d'y ajouter deux lignes du type :
+      <nom du type de données>
+      <chemin ou se trouve le programme>
+Par exemple :
+      gif
+      C:ZGif
+Le nom du type de données correspond au nom du Datatype associé tel qu'il apparait
+ dans DEVS:Datatypes.
+
+Il est aussi possible de faire jouer la recherche sur les noms de fichiers, et ce de
+ la même manière. Par exemple :
+      #jpeg
+      BIN:Viewers/FastJPEG
+Remarquez que c'est le caractère # qui différencie la recherche sur les noms de fichiers
+ de celle sur les types.
+
+De plus, au cas où le fichier passé en paramétre ne pourrait pas être identifié ou
+ qu'aucune définition ne lui corresponde, MultiDisplay utilise un programme par
+ défaut qui doit être donné impérativement au début du fichier de configuration.
+Les types déclarés au début ont bien sûr précédence sur ceux qui suivent.
+Si MultiDisplay est appelé depuis le Shell sans arguments ou depuis le Workbench, une
+ requête de fichiers apparait pour demander quel fichier doit être ouvert (multi-sélection
+ possible).
+
+Les instructions qui suivent peuvent former le fichier "S:MD.config" dont
+ MultiDisplay a besoin.
+
+---------------------------------------------->8-------------------------------------------
+
+SYS:Utilities/Multiview PUBSCREEN=Workbench
+;Maintenant on peut mettre des commentaires ...
+#.BSH
+WORK:Bin/VT
+ilbm
+SYS:Utilities/Fastview
+#.yafa
+WORK:Bin/YP
+gif
+SYS:Utilities/Fastview
+png
+WORK:Bin/VT
+;Ce bon vieux FastJPEG a quelques difficultés avec certains formats JFIF
+#.JPEG
+PIC:JpegAGA/JpegAGA.020
+jfif
+PIC:FastJPEG/FJPEG_AGA
+jpeg
+PIC:FastJPEG/FJPEG_AGA
+bmp
+SYS:Utilities/Fastview
+#.PCX
+SYS:Utilities/Fastview
+#install
+SYS:Utilities/Installer
+#.HTML
+TOOLS:Comm/MoreHTML/MoreHTML
+ascii
+WORK:Bin/MuchMore
+amigaguide
+SYS:Utilities/PowerGuide PUBSCREEN=Workbench
+#.CDXL
+WORK:Bin/CDgsXL
+#.ANIM
+PIC:CyberAnim/CyberAnim
+#.FLI
+PIC:Flick/Flick
+#.FLC
+PIC:Flick/Flick
+#.AVI
+WORK:Bin/TapAVI
+#.MPEG
+WORK:Bin/AmiPeg
+#.movie
+WORK:Bin/MoviePlayer
+#.MOV
+WORK:Bin/QT
+#.ANMB
+WORK:Bin/VT
+anim
+PIC:CyberAnim/CyberAnim
+#.HSN
+WORK:Bin/PlaySound
+#.SND
+WORK:Bin/Play16
+#.MED
+MUSIC:OctaMED/OctaMEDPlayer
+#.MOD
+WORK:Bin/SmartPlay
+#MOD.
+WORK:Bin/SmartPlay
+8svx
+WORK:Bin/SMPlay
+wav
+WORK:Bin/SMPlay
+voc
+WORK:Bin/SMPlay
+#.LHA
+SYS:Utilities/Unpacker
+binary
+C:VersionWB
+---------------------------------------------->8-------------------------------------------
+
+Dans cet exemple, tous les fichiers du type ascii passés en paramétres à MultiDisplay
+ seront affichés grâce à MuchMore. Mais les fichiers dont le nom contient la chaîne
+ "install", même s'ils sont de ce type donneront lieu à l'appel d'Installer. Donc en
+ plaçant judicieusement des références aux noms de fichiers, il est possible d'affiner
+ la recherche du type.
+
+Si jamais il arrivait que l'ordre ne soit pas respecté, MultiDisplay ne
+ pourrait pas s'en rendre compte et passerait donc une commande erronée au
+ système. Par exemple, si MD.config contient les lignes suivantes :
+      <viewer par défaut>
+      ilbm
+      <viewer ILBM>
+      gif
+      jpeg
+      <viewer JPEG>  etc ...
+La ligne "MD pic:gif/machin.gif" entraînerait la commande "jpeg pic:gif/machin.gif"
+ puis le message d'erreur "jpeg: Commande inconnue".
+Notez que, comme vu dans l'exemple, les commentaires de moins de 512 caractères sont
+autorisés à partir de la deuxième ligne (plus de 512 est dangereux pour la santé ...).
+
+
+
+
+@EndNode
+
+@Node History "MultiDisplay : Petit historique"
+
+1.0 : Première version
+1.1 : Possibilité de "placer" l'argument dans la ligne de commande
+1.2 : Correction de plusieurs bugs des versions précédentes
+      Suppression de la possibilité de "placer" l'argument dans la ligne de commande
+1.3 : Passage de Dice à GCC avec Libnix
+1.4 : Lancement asynchrone des commandes
+      Utilisation des datatypes et de l'exemple examinedt.c Copyright © 1992-1996 ESCOM AG,
+      écrit par David N. Junod et figurant sur le CD Amiga Developer CD 1.1
+1.5 : Ajouté la reconnaissance des patterns, perdue depuis la version 1.3
+      Ajouté les options All et Sync
+1.6 : Ajout d'une interface Reqtools Copyright © 1991-1994 Nico François 1995-1998 Magnus Holmgren,
+      utilisée si MD est lancé sans argument
+      Possibilité d'utiliser les tooltypes pour les options ALL et SYNC
+1.6a : MD peut être appelé depuis une icône projet s'il en est l'outil par défaut
+      Correction d'un bug concernant la lecture des tooltypes si MD n'a pas d'icône
+      Ajouté l'option SHOWDT
+1.7 : Possibilité d'ouvrir MD en AppIcon
+1.8 : Localisation
+      Première distribution sur Aminet
+1.8b : MD.config est cherché d'abord dans PROGDIR: puis dans S:
+      Documentation mise à jour
+      Catalogue italien inclus (merci à Luca Di Massimo)
+1.9 : Possibilité de sauter un fichier lorsqu'une liste est passée en arguments ou même de
+      stopper MD lorsque SHOWDT est actif
+      La requête de fichiers se souvient (enfin !) de la séléction précédente
+1.10 : Diverses améliorations qui auraient du être faites il y a longtemps
+      En mode Workbench, MD n'ouvre plus de requête de fichiers après le dernier argument
+      Corrigé un bug à propos des chemins relatifs avec la requête de fichiers
+      L'option APPICON est ignorée si des arguments sont passés
+      L'argument FILES n'est plus obligatoire
+      Les informations données par l'option SHOWDT sont maintenant un peu plus complètes
+      (nom du fichier, groupe et nom de base du datatype)
+      Les commentaires sont autorisés dans le fichier de configuration à partir de la deuxième ligne
+      Et enfin, l'executable a été renommé "MultiDisplay"
+
+Futur : Transformation en Commodity ? Une meilleure documentation ?
+
+@EndNode
+
+@Node Bugs "MultiDisplay : Problèmes éventuels ... Bugs ?"
+
+Il se peut que le passage de plusieurs fichiers de type différent pose quelques
+ problèmes disons de présentation, les commandes étant lancées de façon asynchrone...
+
+Par exemple, "md pic:GIF/Aigle.GIF Data:Divers/AliensAhead/AliensAhead.guide" associé au
+ fichier de configuration donné en exemple va appeler Fastview pour afficher l'image
+ "aigle.gif". Arrivé environ au tiers de l'image, PowerGuide va afficher le fichier
+ "aliensahead.guide" mais va ouvrir sa fenêtre sur l'écran courant, c'est à dire sur
+ l'écran où apparait l'image !! La solution est donc d'ajouter l'argument
+ PUBSCREEN=Workbench pour éviter cette situation.
+
+Bien sûr, tous les viewers ne supportent pas cette option d'où la nécessité de préférer
+ ceux qui ouvrent leur propre écran.
+Ce problème peut être évité en utilisant le mot-clef Sync, mais alors les fichiers
+ seront visualisés l'un après l'autre.
+
+Dans le cas où un joker est utilisé en paramétre, par exemple "MD PIC:G#?", les fichiers
+ des répertoires correspondant, s'ils existent, ne seront pas examinés (par exemple les
+ images du répertoire PIC:GIF/) à moins que le mot clef All ne soit précisé.
+
+MultiDisplay (MD pour les intimes) est primaire mais efficace. Il prend son véritable
+ intérêt avec ToolManager. Depuis des mois, je me repose sur lui pour rendre mon
+ "multimédia visiblement plus puissant".
+
+Si vous découvrez un bug, ce qui n'est pas impossible, veuillez m'en faire part. La
+ version 1.8 comportait bon nombre d'imperfections que j'ai mis du temps à découvrir
+ puisque je ne l'utilisais qu'avec ToolManager (voir pour cela l'@{"historique " LINK History} ).
+ J'ai essayé de les corriger toutes...
+@EndNode
+
+@Node Author "MultiDisplay : Qui suis je ? Ou suis je ? Ou cours je ?"
+
+Je peux être joint aux adresses suivantes. N'hésitez pas à visiter mes modestes pages
+ Ouebe ou à me laisser un message. Si j'ai le temps de changer mes pages, j'y mettrai
+ à disposition la dernière version de MD et de quelques autres de mes superbes créations.
+De plus si vous avez localisé MD, envoyez moi votre catalogue pour que je le joigne à
+ l'archive.
+
+Je tiens à remercier
+ - les auteurs des utilitaires utilisés dans l'exemple de configuration.
+ - la communauté Amiga de France et de Navarre.
+
+--------------- colinf@chez.com -------------------------------------------------
+                http://www.chez.com/colinf/
+
+--------------- Fabrice COLIN ---------------------------------------------------
+                "Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn"
+@EndNode
