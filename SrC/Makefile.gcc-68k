@@ -1,7 +1,7 @@
-ccomp = gcc
+ccomp = m68k-amigaos-gcc
 catcomp = catcomp
 linkflags = -noixemul -lreqtools
-flags = -Wall
+flags = -Wall -I/opt/m68k-amigaos/os-include/ -L/opt/m68k-amigaos/os-lib/
 # -DDEBUG_INFO -DDEBUG=LINE -d1 -g
 bin = MultiDisplay
 obj = mdprincipal.o mdfonctions.o mddatatypes.o mdreqtools.o mdappicon.o
