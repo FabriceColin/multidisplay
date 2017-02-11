@@ -1,7 +1,6 @@
 /*
 **
 ** MULTI DISPLAY
-** " Le vrai-faux viewer universel "
 */
 #ifndef MD_REQTOOLS_H
 #define MD_REQTOOLS_H

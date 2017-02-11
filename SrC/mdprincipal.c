@@ -1,43 +1,41 @@
 /*
 **
 ** MULTI DISPLAY
-** " Le vrai-faux viewer universel "
 */
 #include "defs.h"
 #include "mdstrings.h"
-/* Fonctions externes */
-#include "mdfonctions.h"        /* OuvrirLibrairies , FermerLibrairies , LectureIcone , Recherche , GetString */
-#include "mdreqtools.h"         /* RTRequete , RTInfo */
-#include "mddatatypes.h"        /* VerificationSys */
-#include "mdappicon.h"          /* CreerIcone */
 
-#define TEMPLATE          "ALL/S,SYNC/S,SHOWDT/S,FILES/M"
+/* External functions */
+#include "mdfonctions.h"
+#include "mdreqtools.h"
+#include "mddatatypes.h"
+#include "mdappicon.h"
+
+#define TEMPLATE          "ALL/S,SYNC/S,SHOWDT/S,LOOP/S,FILES/M"
 #define OPT_ALL           0
 #define OPT_SYNC          1
 #define OPT_SHOW          2
-#define OPT_FILES         3
-#define OPT_COUNT         4
+#define OPT_LOOP          3
+#define OPT_FILES         4
+#define OPT_COUNT         5
 
-struct AnchorPath g_apPath;                     /* Alignement en LONGWORD */
-extern struct Library *SysBase,*DOSBase;        /* Deja ouvertes */
-extern struct LocaleInfo md_locale;             /* Pour GetString() */
+struct AnchorPath g_apPath;                     /* LONGWORD aligned */
+extern struct Library *SysBase,*DOSBase;
+extern struct LocaleInfo liLocale;
 
-STRPTR VERSION = "$VER: Multidisplay 1.10 (01.01.99)\n\0";
-LONG opts[OPT_COUNT];                           /* Parametres */
-STRPTR g_strDef=NULL;                           /* Instruction par defaut */
-BOOL app=FALSE,all=FALSE,sync=FALSE,show=FALSE; /* Parametres */
+STRPTR VERSION = "$VER: Multidisplay 1.10a (18.09.99)\n\0";
+LONG plOpts[OPT_COUNT];
+STRPTR g_strDef=NULL;                           /* Default instruction */
+BOOL app=FALSE,all=FALSE,sync=FALSE,show=FALSE,loop=FALSE;      /* Parameters */
 static struct ConfigElem *g_pceHeader=NULL;     /* Configuration */
 
-/* Libere la memoire allouee pour la configuration */
+/* Free the memory space allocated to the configuration list */
 void LibererConfig(void)
 {
    struct ConfigElem *pceElem=g_pceHeader, *pceNextElem=NULL;
 
    while( pceElem != NULL )
    {
-#ifdef DEBUG
-      printf("Libération de %s,%s\n",pceElem->m_strId,pceElem->m_strExe);
-#endif
       if( pceElem->m_strId != NULL )
          FreeVec(pceElem->m_strId);
       if( pceElem->m_strExe != NULL )
@@ -50,428 +48,406 @@ void LibererConfig(void)
    g_pceHeader = NULL;
 }
 
-/* Lit le fichier de configuration */
+/* Read the configuration file */
 BOOL LectureConfig(STRPTR *pstrDefault)
 {
    struct ConfigElem *pcePrevElem=NULL, *pceElem=NULL;
-   BOOL comp=TRUE;
-   STRPTR buffer;
+   BOOL bCompare=TRUE;
+   STRPTR strBuff;
    BPTR bpSource=NULL;
 
-   buffer = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
-   if( buffer == NULL )
-      return FALSE;
+   strBuff = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
 
-   /* Ouverture du fichier de configuration dans le repertoire courant ou S: */
+   /* Try to open it in the current directory or in S: if it fails */
    bpSource = Open("PROGDIR:MD.config",MODE_OLDFILE);
    if( !bpSource )
    {
       bpSource = Open("S:MD.config",MODE_OLDFILE);
       if( !bpSource )
       {
-         Fault(IoErr(),"MD.config",buffer,MAX_BUFFER);
-         RTInfo(buffer,MODE_ACK_INFO);
-         FreeVec(buffer);
+         Fault(IoErr(),"MD.config",strBuff,MAX_BUFFER);
+         RTInfo(strBuff,MODE_ACK_INFO);
+         FreeVec(strBuff);
          return FALSE;
       }
    }
 
-   /* Lecture de l'instruction par defaut */
+   /* Read default instruction */
    if( FGets(bpSource,*pstrDefault,MAX_BUFFER) == NULL )
       return FALSE;
-
-#ifdef DEBUG
-   printf("Instruction par défaut : %s",*pstrDefault);
+   /* without the trailing backslash */
+   (*pstrDefault)[ strlen(*pstrDefault)-1 ] = '\0';
+#ifdef DEBUG_INFO
+   printf("Default instruction : %s\n",*pstrDefault);
 #endif
 
-   while( FGets(bpSource,buffer,MAX_BUFFER) )
+   while( FGets(bpSource,strBuff,MAX_BUFFER) )
    {
-      /* Les commentaires sont autorisés à partir de ce point */
-      if( buffer[0] == ';' )
+      /* Comments are allowed from the second line on */
+      if( strBuff[0] == ';' )
          continue;
 
-      /* On se debarasse du \n obtenu a la lecture ... */
-      buffer[ strlen(buffer)-1 ] = '\0';
-
-      /* comp est vrai si la ligne du fichier est un type de donnees */
-      if( comp == TRUE )
+      strBuff[ strlen(strBuff)-1 ] = '\0';
+      /* When the line is a data type description, bCompare is TRUE */
+      if( bCompare == TRUE )
       {
          /* Allocation */
          pceElem = (struct ConfigElem *)MemoryAlloc(sizeof(struct ConfigElem),TRUE);
-         pceElem->m_strId = (STRPTR)MemoryAlloc(strlen(buffer)+1,TRUE);
-         strcpy(pceElem->m_strId,buffer);
+         pceElem->m_strId = (STRPTR)MemoryAlloc(strlen(strBuff)+1,TRUE);
+         strcpy(pceElem->m_strId,strBuff);
          pceElem->m_pceNext = NULL;
 
-         /* Teste s'il s'agit d'un datatype ou d'une extension de nom de fichier */
-         if( buffer[0] != '#' )
+         /* Is a DataType or a file name pattern ? */
+         if( strBuff[0] != '#' )
             pceElem->m_bDatatype = TRUE;
          else
             pceElem->m_bDatatype = FALSE;
 
-         /* Premier element ? */
+         /* First read element ? */
          if( pcePrevElem == NULL )
             g_pceHeader = pceElem;
          else
             pcePrevElem->m_pceNext = pceElem;
          pcePrevElem = pceElem;
 
-         comp = FALSE;
+         bCompare = FALSE;
       }
       else
       {
-         pceElem->m_strExe = (STRPTR)MemoryAlloc(strlen(buffer)+1,TRUE);
-         strcpy(pceElem->m_strExe,buffer);
-#ifdef DEBUG
-         printf("Lecture de %s,%s\n",pceElem->m_strId,pceElem->m_strExe);
+         pceElem->m_strExe = (STRPTR)MemoryAlloc(strlen(strBuff)+1,TRUE);
+         strcpy(pceElem->m_strExe,strBuff);
+#ifdef DEBUG_INFO
+         printf("Read %s,%s\n",pceElem->m_strId,pceElem->m_strExe);
 #endif
-         comp = TRUE;
+         bCompare = TRUE;
       }
    }
 
-   FreeVec(buffer);
+   FreeVec(strBuff);
    if( bpSource )
       Close(bpSource);
 
    return TRUE;
 }
 
-/* Determine quelle commande correspond au fichier donne selon son type */
-const STRPTR TrouverConfig(STRPTR arg,STRPTR id)
+/* Determine which call is to be made for a file depending on its type */
+const STRPTR TrouverConfig(STRPTR strFileName,STRPTR strId)
 {
    struct ConfigElem *pcePrevElem,*pceElem;
-   BOOL stop=FALSE;
+   BOOL bStop=FALSE;
 
    pcePrevElem = pceElem = g_pceHeader;
 
-   while( (pceElem != NULL) && (stop == FALSE) )
+   while( (pceElem != NULL) && (bStop == FALSE) )
    {
-#ifdef DEBUG
-      printf("\tde %s, type %s, avec %s\n",arg,id,pceElem->m_strId);
+#ifdef DEBUG_INFO
+      printf("\t%s, type %s, with %s\n",strFileName,strId,pceElem->m_strId);
 #endif
-      /* Teste s'il s'agit d'un datatype ou d'une extension de nom de fichier */
-      if( pceElem->m_bDatatype == TRUE )
-         stop = ComparaisonID(pceElem->m_strId,id);
+      /* Is it a DataType or a name pattern ? */
+      if( (pceElem->m_bDatatype == TRUE) && (strId != NULL) )
+         bStop = ComparaisonID(pceElem->m_strId,strId);
       else
-         stop = ComparaisonNom(pceElem->m_strId,arg);
+         bStop = ComparaisonNom(pceElem->m_strId,strFileName);
 
-      /* Element suivant */
+      /* Next element */
       pcePrevElem = pceElem;
       pceElem = pceElem->m_pceNext;
    }
-   if( stop == TRUE )
+   if( bStop == TRUE )
       return pcePrevElem->m_strExe;
 
    return NULL;
 }
 
-/* Determine les fichiers qui sont à traiter dans le cas de joker
-   Sinon ne fait qu'appeller Recherche()
-   Retourne FALSE si une erreur s'est produite */
-BOOL TraitementCli(STRPTR arg,ULONG ulMode)
+/* Determine what files have to be examined in case of a joker
+   Return FALSE if MultiDisplay must stop */
+BOOL TraitementCli(STRPTR strFileName,ULONG ulMode)
 {
-   BPTR old_dir;
-   BOOL changer_rep=FALSE,continuer=TRUE;
-   ULONG result;
-   STRPTR pbuffer,buffer;
+   BPTR bpOldDir = 0;
+   BOOL bContinue=TRUE;
+   STRPTR strBuff;
 
-   pbuffer = (STRPTR)MemoryAlloc(3*strlen(arg),TRUE);
-   if( !pbuffer )
-      return FALSE;
+   strBuff = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
 
-#ifdef DEBUG
-   printf("Traitement de %s\n",arg);
-#endif
-
-   /* Teste si l'argument contient un joker */
-   result = ParsePattern(arg,pbuffer, 3*strlen(arg) );
-   if( result == 1)
+   /* Is there a joker in this ? */
+   if( ParsePattern(strFileName,strBuff,MAX_BUFFER) == 1)
    {
-#ifdef DEBUG
-      printf("Joker utilisé dans %s\n",arg);
+#ifdef DEBUG_INFO
+      printf("Joker used in %s\n",strFileName);
 #endif
-      /* Initialisation de la structure AnchorPath */
+      /* Initialisation of the AnchorPath structure */
       g_apPath.ap_BreakBits = SIGBREAKF_CTRL_C;
       g_apPath.ap_Strlen = 0;
-      /* Recherche le s'il existe au moins un objet DOS correspondant */
-      result = MatchFirst(arg,&g_apPath);
-      if( result == 0 )
+      /* Search if there is at least a corresponding DOS object */
+      if( MatchFirst(strFileName,&g_apPath) != 0 )
       {
-         /* Oui */
-         changer_rep = TRUE;
-      }
-      else
-      {
-         /* Non */
-         FreeVec(pbuffer);
-         buffer = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
-         if( !pbuffer )
-            return FALSE;
-         sprintf(buffer,GetString(&md_locale,MSG_NOMATCH),arg);
-         RTInfo(buffer,MODE_ACK_INFO);
+         /* No */
+         sprintf(strBuff,GetString(&liLocale,MSG_NOMATCH),strFileName);
+         RTInfo(strBuff,MODE_ACK_INFO);
          MatchEnd(&g_apPath);
-         FreeVec(buffer);
+         FreeVec(strBuff);
          return FALSE;
       }
-   }
-
-   /* Un ou plusieurs objets correspondent au joker */
-   if( changer_rep == TRUE )
-   {
       do
       {
-         old_dir = CurrentDir(g_apPath.ap_Current->an_Lock);
-         strcpy(pbuffer,g_apPath.ap_Info.fib_FileName);
+         /* Go back to the previous directory */
+         if( bpOldDir )
+            CurrentDir(bpOldDir);
+         bpOldDir = CurrentDir(g_apPath.ap_Current->an_Lock);
+
+         strcpy(strBuff,g_apPath.ap_Info.fib_FileName);
          if( g_apPath.ap_Info.fib_DirEntryType > 0 )
          {
-            /* Cette entree est un repertoire */
-#ifdef DEBUG
-            printf("Répértoire : %s\n",pbuffer);
+            /* This entry is a directory */
+#ifdef DEBUG_INFO
+            printf("Directory : %s\n",strBuff);
 #endif
             if( all == TRUE )
             {
-               /* On autorise l'entree dans ce repertoire si on n'en vient pas ! */
+               /* Allow to enter this directory if we don't come from it */
                if( ! (g_apPath.ap_Flags & APF_DIDDIR) )
                   g_apPath.ap_Flags = g_apPath.ap_Flags | APF_DODIR;
-               /* On nettoie pour pouvoir entrer dans d'autres repertoires */
+               /* Clear to get in other directories */
                g_apPath.ap_Flags = g_apPath.ap_Flags & ~APF_DIDDIR;
             }
          }
          else
          {
-#ifdef DEBUG
-            printf("Occurence : %s\n",pbuffer);
+#ifdef DEBUG_INFO
+            printf("Pattern matching object : %s\n",strBuff);
 #endif
-            /* Ici on ne peut pas savoir s'il s'agit du dernier de la liste donc on reste
-               tout le temps dans le meme mode */
-            continuer = Recherche(pbuffer,MODE_BROWSE_INFO);
+            /* Since we can't know if it is the last of the list, stay in the same mode */
+            bContinue = Recherche(strBuff,ulMode);
          }
-         CurrentDir(old_dir);
-      }while( (MatchNext(&g_apPath) == 0) && (continuer == TRUE) );
+      }while( (MatchNext(&g_apPath) == 0) && (bContinue == TRUE) );
+
+      MatchEnd(&g_apPath);
    }
-   else continuer = Recherche(arg,ulMode);
+   else bContinue = Recherche(strFileName,ulMode);
 
-   MatchEnd(&g_apPath);
-   FreeVec(pbuffer);
+   FreeVec(strBuff);
 
-   return continuer;
+   return bContinue;
 }
 
-/* Decortique la liste des arguments et appelle Recherche() s'il y a des arguments
-   Si l'argument/tooltype AppIcon existe on cree une AppIcon qu'il y ait des arguments ou non
-   Si une erreur se produit, on renvoie FALSE pour ouvrir la requete de fichiers
-   Renvoie TRUE si une requete de fichiers doit etre ouverte */
-BOOL TraitementWB(char **args)
+/* Return FALSE if MultiDisplay must stop */
+BOOL TraitementWB(struct WBArg *pwbaArgs, LONG lArgsNbr)
 {
-   struct WBStartup *wbs;
-   struct WBArg *wbarg;
-   BPTR old_dir;
+   struct WBArg *pwbaList = pwbaArgs;
+   BPTR bpOldDir;
    BOOL bContinue=TRUE;
    ULONG ulMode;
    LONG i;
 
-   wbs = (struct WBStartup *)args;
-   wbarg = wbs->sm_ArgList;
-
-   /* Lecture des types d'outils
-      On en profite pour recuperer la structure DiskObject qui correspond au tooltype APPICON */
-   LectureIcone(wbarg->wa_Name,wbarg->wa_Lock);
-
-   /* Pas d'arguments, juste le nom de MD (0 impossible, non ?) */
-   if( wbs->sm_NumArgs <= 1 )
-      return TRUE;
-
-   /* Sinon on a des arguments : on les traite
-      Passer un argument en mode WB met sm_NumArgs a 1
-      Avec ToolManager , on a 2 !? */
-#ifdef DEBUG
-   printf("Nombre d'arguments WB: %ld\n",wbs->sm_NumArgs);
+#ifdef DEBUG_INFO
+   printf("Number of WB arguments: %ld\n",lArgsNbr);
 #endif
-   /* On passe le nom de MD */
-   wbarg++;
 
-   if( wbs->sm_NumArgs > 1 )
-      ulMode = MODE_BROWSE_INFO;
-   else
-      ulMode = MODE_ACK_INFO;
-
-   for(i=1;i<wbs->sm_NumArgs;i++,wbarg++)
+   do
    {
-      if( wbarg == NULL )
-         break;
+      ulMode = MODE_BROWSE_INFO;
 
-      /* Quel genre d'objet ne peut pas avoir de lock ? */
-      if( wbarg->wa_Lock )
+      for(i=0;i<lArgsNbr;i++)
       {
-#ifdef DEBUG
-         printf("Traitement de %ld : %s (lock)\n",i,wbarg->wa_Name);
+         if( pwbaArgs == NULL )
+            break;
+
+         /* What DOS object has no lock ? */
+         if( pwbaArgs->wa_Lock )
+         {
+#ifdef DEBUG_INFO
+            printf("%ld : %s (lock)\n",i,pwbaArgs->wa_Name);
 #endif
-         old_dir = CurrentDir(wbarg->wa_Lock);
+            bpOldDir = CurrentDir(pwbaArgs->wa_Lock);
+         }
+#ifdef DEBUG_INFO
+         else
+            printf("%ld : %s\n",i,pwbaArgs->wa_Name);
+#endif
+         /* Change information mode for the last argument if Loop is not set */
+         if( (i == lArgsNbr-1) && (loop == FALSE) )
+            ulMode = MODE_ACK_INFO;
+
+         /* bContinue could have been set by the previous call */
+         if( bContinue == TRUE )
+            bContinue = Recherche(pwbaArgs->wa_Name,ulMode);
+
+         if( pwbaArgs->wa_Lock && bpOldDir )
+            CurrentDir(bpOldDir);
+         /* Next argument */
+         pwbaArgs++;
       }
-#ifdef DEBUG
-      else
-         printf("Traitement de %ld : %s\n",i,wbarg->wa_Name);
-#endif
-      /* Changement de mode pour le dernier argument */
-      if( i == wbs->sm_NumArgs-1 )
-         ulMode = MODE_ACK_INFO;
+      /* Reinitialisation */
+      pwbaArgs = pwbaList;
+   }while( (loop == TRUE) && (bContinue == TRUE) );
 
-      /* bContinue a pu etre mis a FALSE par l'appel precedent */
-      if( bContinue == TRUE )
-         /* Ici on ne peut pas avoir de joker */
-         bContinue = Recherche(wbarg->wa_Name,ulMode);
-
-      if( wbarg->wa_Lock && old_dir )
-         CurrentDir(old_dir);
-   }
-#ifdef DEBUG
-   printf("Traitement terminé avec l'argument %ld\n",i);
-#endif
-
-   /* On desactive le mode AppIcon puisqu on a eu des arguments a traiter */
-   app = FALSE;
-
-   return FALSE;
+   return bContinue;
 }
 
-/* Ferme "tout" en cas de break inopine */
+/* Set parameters according to CLI arguments */
+STRPTR *ReadParameters(struct RDArgs *prdaArgs,LONG lArgsNbr)
+{
+   if( (prdaArgs == NULL) || (lArgsNbr == 0) )
+      return NULL;
+
+   if( plOpts[OPT_ALL] )
+   {
+#ifdef DEBUG_INFO
+      printf("Option All on...\n");
+#endif
+      all = TRUE;
+      lArgsNbr--;
+   }
+   if( plOpts[OPT_SYNC] )
+   {
+#ifdef DEBUG_INFO
+      printf("Option Sync on...\n");
+#endif
+      sync = TRUE;
+      lArgsNbr--;
+   }
+   if( plOpts[OPT_SHOW] )
+   {
+#ifdef DEBUG_INFO
+      printf("Option ShowDT and Sync on...\n");
+#endif
+      show = sync = TRUE;
+      lArgsNbr--;
+   }
+   if( plOpts[OPT_LOOP] )
+   {
+#ifdef DEBUG_INFO
+      printf("Option Loop and ShowDT/Sync on...\n");
+#endif
+      loop = show = sync = TRUE;
+      lArgsNbr--;
+   }
+#ifdef DEBUG_INFO
+   printf("%ld arguments to examine\n",lArgsNbr);
+#endif
+
+   return (STRPTR *)(plOpts[OPT_FILES]);
+}
+
+/* User break */
 void Break(void)
 {
    LibererConfig();
    FermerLibrairies();
 }
 
-/* Ouvre les librairies et le fichier de configuration
-   Determine le mode de lancement puis les options eventuelles
-   Appelle TraitementCli(), TraitementWB() ou RTRequete() selon le cas */
 int main(int argn,char **argv)
 {
-   struct RDArgs *argsptr;
-   BOOL ask_user=FALSE,continuer=TRUE;
+   struct WBStartup *pwbsStartup;
+   struct WBArg *pwbaArgs;
+   struct RDArgs *prdaArgs;
+   STRPTR strBuff,strDefault,*pstrArgsList,*pstrCliArgs;
+   LONG lArgsNbr, lIndex;
    ULONG ulMode;
-   STRPTR buffer,*sptr,*nextsptr,strDefault;
-   int iNbrArg;
+   BOOL ask_user=TRUE, bContinue=TRUE;
 
    if( SysVersionCheck() == FALSE )
      return RETURN_ERROR;
 
    atexit(Break);
 
-   buffer = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
+   strBuff = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
    strDefault = (STRPTR)MemoryAlloc(MAX_BUFFER,TRUE);
-   if( (buffer == NULL) || (strDefault == NULL) )
-      return RETURN_ERROR;
 
-   /* Ouverture des librairies necessaires */
    if( OuvrirLibrairies() == FALSE )
    {
-      printf(GetString(&md_locale,MSG_NOLIBS));
+      printf(GetString(&liLocale,MSG_NOLIBS));
       FermerLibrairies();
       FreeVec(strDefault);
-      FreeVec(buffer);
+      FreeVec(strBuff);
       return RETURN_ERROR;
    }
 
+  /* Read configuration */
    if( LectureConfig(&strDefault) == FALSE )
    {
-      FermerLibrairies();
-      FreeVec(strDefault);
-      FreeVec(buffer);
-      return RETURN_ERROR;
+       FermerLibrairies();
+       FreeVec(strDefault);
+       FreeVec(strBuff);
+       return RETURN_ERROR;
    }
-   /* L'instruction par defaut doit etre disponible a d'autres */
+   /* Make the default instruction available globally */
    g_strDef = strDefault;
 
-   /* Teste si MD est lance depuis un Shell car ReadArgs() a besoin d'une entree
-      depuis laquelle il lit les parametres
-      Dans le cas d'un lancement depuis le WB on aurait alors ouverture d'une fenetre
-      Un equivalent serait de tester le retour de Cli() */
-   if( argn > 0 )
+   /* Is MultiDisplay launched from CLI or WB
+      Testing Cli() would be equivalent */
+   if( argn == 0 )
    {
-      /* "Tache CLI" : lecture parametres */
-      argsptr = (struct RDArgs *)ReadArgs(TEMPLATE,opts,NULL);
-      iNbrArg = argn-1;
-      if( argsptr != NULL )
+      /* "WB task" : argn equals 0 and argv points to a WBStartup structure */
+      if( argv != NULL )
       {
-         if( opts[OPT_ALL] )
-         {
-#ifdef DEBUG
-            printf("Option All activée...\n");
-#endif
-            all = TRUE;
-            iNbrArg--;
-         }
-         if( opts[OPT_SYNC] )
-         {
-#ifdef DEBUG
-            printf("Option Sync activée...\n");
-#endif
-            sync = TRUE;
-            iNbrArg--;
-         }
-         if( opts[OPT_SHOW] )
-         {
-#ifdef DEBUG
-            printf("Option ShowDT (et donc Sync) activée...\n");
-#endif
-            show = TRUE;
-            sync = TRUE;
-            iNbrArg--;
-         }
-#ifdef DEBUG
-         printf("Lancement avec %d/%d arguments\n",iNbrArg,argn);
-#endif
+         pwbsStartup = (struct WBStartup *)argv;
+         pwbaArgs = pwbsStartup->sm_ArgList;
+         lArgsNbr = pwbsStartup->sm_NumArgs;
 
-         sptr = (STRPTR *)(opts[OPT_FILES]);
-         if( sptr )
+         /* Read tool types and icon DiskObject */
+         LectureIcone(pwbaArgs->wa_Name,pwbaArgs->wa_Lock);
+
+         /* Any argument ? */
+         if( lArgsNbr > 1 )
          {
-            /* Le mode depend du nombre d'arguments */
-            if( argn > 1 )
-               ulMode = MODE_BROWSE_INFO;
-            else ulMode = MODE_ACK_INFO;
-
-            /* Traitement de tous les arguments */
-            nextsptr = sptr;
-            while( (*sptr) && (continuer == TRUE) )
-            {
-               nextsptr++;
-               /* Changement de mode pour le dernier argument */
-               if( iNbrArg == 1 )
-                  ulMode = MODE_ACK_INFO;
-
-               continuer = TraitementCli(*sptr,ulMode);
-               sptr++;
-               iNbrArg--;
-            }
+            /* Skip MultiDiplay name */
+            pwbaArgs++;
+            lArgsNbr--;
+            TraitementWB(pwbaArgs,lArgsNbr);
+            ask_user = FALSE;
          }
-         /* Puisque FILES n'est pas obligatoire, on doit demander un choix a l'utilisateur
-            tout en gardant les options qu'il a pu active sur la ligne de commande */
-         else ask_user = TRUE;
+         /* Iconify or not ?
+            This option is activated in WB mode only */
+         else if( app == TRUE )
+         {
+            CreerIcone();
+            ask_user = FALSE;
+         }
       }
-      else ask_user = TRUE;     /* Pas de parametres */
-      /* Liberation seulement si argsptr utilise ! */
-      FreeArgs(argsptr);
    }
    else
    {
-      /* "Tache WB" : argn vaut 0 mais argv peut pointer sur une structure WBStartup
-         s'il y a des arguments. Normalement il y en a au moins un, qui est le
-         nom de MD, donc la condition devrait etre toujours verifiee !?
-         Avec DICE, le point d'entrée serait wbmain() et non main() */
-      if( argv )
-         ask_user = TraitementWB(argv);
-      else ask_user = TRUE;
+      /* "CLI task" */
+      prdaArgs = (struct RDArgs *)ReadArgs(TEMPLATE,plOpts,NULL);
+      if( prdaArgs != NULL )
+      {
+         /* Skip MultiDisplay name */
+         lArgsNbr = (LONG )(argn-1);
+
+         pstrCliArgs = ReadParameters(prdaArgs,lArgsNbr);
+         if( pstrCliArgs )
+         {
+            do
+            {
+               /* Initialisation */
+               pstrArgsList = pstrCliArgs;
+               lIndex = 0;
+               ulMode = MODE_BROWSE_INFO;
+               /* Parse all arguments */
+               do
+               {
+                  /* Change information mode for the last argument if Loop has not been set */
+                  if( (lIndex == lArgsNbr-1) && (loop == FALSE) )
+                     ulMode = MODE_ACK_INFO;
+
+                  bContinue = TraitementCli(*pstrArgsList,ulMode);
+                  pstrArgsList++;
+                  lIndex++;
+               }while( (bContinue == TRUE) && (*pstrArgsList) );
+            }while( (loop == TRUE) && (bContinue == TRUE) );
+            ask_user = FALSE;
+         }
+      }
+      FreeArgs(prdaArgs);
    }
 
-   /* On regarde s'il faut iconifier
-      Cette option n'est activee qu'en mode WB */
-   if( app == TRUE )
-       CreerIcone();
-   /* Afficher la requete de fichiers ? */
-   else if( ask_user == TRUE )
+   /* Display a file requester ? */
+   if( ask_user == TRUE )
       while( RTRequete() == TRUE );
 
    FreeVec(strDefault);
-   FreeVec(buffer);
+   FreeVec(strBuff);
    LibererConfig();
    FermerLibrairies();
 

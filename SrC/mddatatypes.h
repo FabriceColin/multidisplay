@@ -1,7 +1,6 @@
 /*
 **
 ** MULTI DISPLAY
-** " Le vrai-faux viewer universel "
 */
 #ifndef MD_DATATYPES_H
 #define MD_DATATYPES_H

@@ -1,8 +1,8 @@
-ccomp = tovbr vc
+ccomp = gcc
 catcomp = catcomp
-linkflags = -lreqtools
-flags = +warpos -amiga-align
-# -DDEBUG_INFO
+linkflags = -noixemul -lreqtools
+flags = -Wall
+# -DDEBUG_INFO -DDEBUG=LINE -d1 -g
 bin = MultiDisplay
 obj = mdprincipal.o mdfonctions.o mddatatypes.o mdreqtools.o mdappicon.o
 cat = MultiDisplay.catalog
@@ -21,19 +21,19 @@ locale :
 	$(catcomp) Catalogs/Translations/multidisplay.cd Catalogs/Translations/english.ct CATALOG=Catalogs/English/$(cat)
 
 mdprincipal.o : mdprincipal.c
-	$(ccomp)  $(flags) -c mdprincipal.c
+	$(ccomp) -c mdprincipal.c $(flags)
 
 mdfonctions.o : mdfonctions.c
-	$(ccomp)  $(flags) -c mdfonctions.c
+	$(ccomp) -c mdfonctions.c $(flags)
 
 mddatatypes.o : mddatatypes.c
-	$(ccomp)  $(flags) -c mddatatypes.c
+	$(ccomp) -c mddatatypes.c $(flags)
 
 mdreqtools.o : mdreqtools.c
-	$(ccomp)  $(flags) -c mdreqtools.c
+	$(ccomp) -c mdreqtools.c $(flags)
 
 mdappicon.o : mdappicon.c
-	$(ccomp)  $(flags) -c mdappicon.c
+	$(ccomp) -c mdappicon.c $(flags)
 
 clear :
 	@delete $(obj)

@@ -18,59 +18,56 @@
  */
 #include "defs.h"
 #include "mdstrings.h"
- /* Fonctions externes */
-#include "mdfonctions.h"        /* GetString */
+
+/* External functions */
+#include "mdfonctions.h"
 
 extern struct Library *SysBase,*DOSBase,*DataTypesBase,*IFFParseBase;
-extern struct LocaleInfo md_locale;                     /* Pour GetString() */
 
 /* Say what the datatype of the file is */
-BOOL ExamenDT(STRPTR name,STRPTR *group,STRPTR *basename)
+BOOL ExamenDT(STRPTR strName,STRPTR *strGroup,STRPTR *strBaseName)
 {
-   struct DataTypeHeader *dth;
-   struct DataType *dtn;
+   struct DataTypeHeader *pdthHeader;
+   struct DataType *pdtDT;
    BOOL bReturn=TRUE;
-   BPTR lock;
+   BPTR bpLock;
 
-  if( (name == NULL) || (*group == NULL) || (*basename == NULL) )
+  if( (strName == NULL) || (*strGroup == NULL) || (*strBaseName == NULL) )
       return FALSE;
 
-   /* Lock the current name */
-   lock = Lock(name,ACCESS_READ);
-   if( lock )
+   /* Lock the current strName */
+   bpLock = Lock(strName,ACCESS_READ);
+   if( bpLock )
    {
       /* Determine the DataType of the file */
-      dtn = ObtainDataTypeA(DTST_FILE,(APTR)lock,NULL);
-      if( dtn )
+      pdtDT = ObtainDataTypeA(DTST_FILE,(APTR)bpLock,NULL);
+      if( pdtDT )
       {
-         dth = dtn->dtn_Header;
+         pdthHeader = pdtDT->dtn_Header;
 
-         *group = (STRPTR)MemoryAlloc(strlen(GetDTString(dth->dth_GroupID))+1,TRUE);
-         *basename = (STRPTR)MemoryAlloc(strlen(dth->dth_BaseName)+1,TRUE);
-         strcpy(*group,GetDTString(dth->dth_GroupID));
-         strcpy(*basename,dth->dth_BaseName);
+         strcpy(*strGroup,GetDTString(pdthHeader->dth_GroupID));
+         strcpy(*strBaseName,pdthHeader->dth_BaseName);
 
-#ifdef DEBUG
-         printf("Group : %s",*group);
-         printf("Base name : %s\n",*basename);
+#ifdef DEBUG_INFO
+         printf("Group : %s",*strGroup);
+         printf("Base strName : %s\n",*strBaseName);
 #endif
          /* Release the DataType */
-         ReleaseDataType (dtn);
+         ReleaseDataType(pdtDT);
       }
       else
       {
-#ifdef DEBUG
-         printf("Cannot obtain datatype information about %s\n",name);
+#ifdef DEBUG_INFO
+         printf("Cannot obtain datatype information about %s\n",strName);
 #endif
-         *group = *basename = NULL;
          bReturn = FALSE;
       }
-      UnLock(lock);
+      UnLock(bpLock);
    }
    else
    {
-#ifdef DEBUG
-      printf("Cannot examine %s\n",name);
+#ifdef DEBUG_INFO
+      printf("Cannot examine %s\n",strName);
 #endif
       bReturn = FALSE;
    }
