@@ -1,8 +1,8 @@
-;;$VER: md.cd 39.10 (01.01.99)
+;;$VER: multidisplay.cd 39.10a (01.02.99)
 ;;
-;;  $Filename: md.cd $
-;;  $Version: 39.10 $
-;;  $Date: 01.01.99 $
+;;  $Filename: multidisplay.cd $
+;;  $Version: 39.10a $
+;;  $Date: 01.02.99 $
 ;;  $Creation: 5.9.97 $
 ;;
 MSG_KSVERSION (1//)
@@ -27,7 +27,7 @@ MSG_REQFILE_TITLE (//)
 Choisir un fichier à ouvrir
 ;
 MSG_REQINFO_TITLE (//)
-MultiDisplay 1.10
+MultiDisplay 1.10a
 ;
 MSG_REQINFO_ACK (//)
 OK
