@@ -1,0 +1,37 @@
+;;$VER: md.cd 39.0 (5.9.97)
+;;
+;;  $Filename: md.cd $
+;;  $Version: 39.0 $
+;;  $Date: 5.9.97 $
+;;  $Creation: 5.9.97 $
+;;
+MSG_KSVERSION (1//)
+KS3.x ou supérieur nécessaire...\n
+;
+MSG_NOLIBS (//)
+Impossible d'ouvrir une des librairies nécessaires...\n
+;
+MSG_NOMATCH (//)
+Aucun fichier ne correspond à\n%s
+;
+MSG_UNKNOWNID (//)
+Impossible de déterminer le type de\n%s
+;
+MSG_SHOWID (//)
+Nom : %s\nType : %s
+;
+MSG_NOICON (//)
+Impossible de créer une AppIcon.\nL'icône de MD ou l'icône par défaut\nn'existe pas !
+;
+MSG_REQFILE_TITLE (//)
+Choisir un fichier à ouvrir
+;
+MSG_REQINFO_TITLE (//)
+MultiDisplay 1.8
+;
+MSG_ICON_TITLE (//)
+MultiDisplay
+;
+MSG_QUIT_APPICON (//)
+Merci d'avoir utilisé MultiDisplay.\nL'Amiga vaincra ...\ncolinf@chez.com (Fabrice Colin)
+;
